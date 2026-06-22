@@ -3,6 +3,9 @@ import { createZodDto } from 'nestjs-zod'
 
 // ── Entity schemas ────────────────────────────────────────────────────────────
 
+// ProductSnapshotSchema mirrors the Product shape from product-service.
+// Defined here rather than imported over the network so order-service has no
+// compile-time dependency on product-service's generated Prisma client.
 export const ProductSnapshotSchema = z.object({
   id: z.uuid(),
   name: z.string(),
@@ -17,12 +20,17 @@ export const OrderSchema = z.object({
   id: z.uuid(),
   productId: z.string(),
   quantity: z.number().int(),
+  // totalPrice is computed at creation time (price × quantity) and stored so
+  // the value is stable even if the product price changes later.
   totalPrice: z.number(),
   status: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
 
+// OrderWithProduct is the enriched read shape — the product field is populated
+// via a TCP call to product-service at query time. It is null when the TCP call
+// fails (product deleted or service unreachable) so reads never throw.
 export const OrderWithProductSchema = OrderSchema.extend({
   product: ProductSnapshotSchema.nullable(),
 })
@@ -32,6 +40,8 @@ export type Order = z.infer<typeof OrderSchema>
 export type OrderWithProduct = z.infer<typeof OrderWithProductSchema>
 
 // ── Create / Update ──────────────────────────────────────────────────────────
+// Updates are intentionally limited to status only — quantity and price are
+// fixed at creation to preserve the original order record.
 
 export const CreateOrderSchema = z.object({
   productId: z.uuid(),
@@ -49,6 +59,9 @@ export type CreateOrderInput = z.infer<typeof CreateOrderSchema>
 export type UpdateOrderInput = z.infer<typeof UpdateOrderSchema>
 
 // ── Query (search, filters, sorting, pagination) ─────────────────────────────
+// `search` filters by product name via a TCP call to product-service
+// (search_products pattern) rather than a local DB query, since product names
+// live in a separate database.
 
 export const OrderQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),

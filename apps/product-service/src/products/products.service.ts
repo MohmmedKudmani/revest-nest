@@ -36,6 +36,8 @@ export class ProductsService {
       ...(minPrice !== undefined || maxPrice !== undefined
         ? { price: { gte: minPrice, lte: maxPrice } }
         : {}),
+      // When both inStock and minStock are set, take the stricter of the two
+      // (at least 1 in stock AND at least minStock units).
       ...(inStock === true && minStock !== undefined
         ? { stock: { gte: Math.max(1, minStock) } }
         : inStock === true
@@ -45,6 +47,7 @@ export class ProductsService {
             : {}),
     }
 
+    // Single DB round-trip: fetch the page and the total count together.
     const [data, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
@@ -58,12 +61,14 @@ export class ProductsService {
     return { data, pagination: buildPagination(total, page, limit) }
   }
 
-  // Plain array — used by TCP handlers to avoid leaking the pagination envelope
+  // Returns a flat array without pagination — used by TCP handlers so they
+  // don't leak the { data, pagination } envelope to order-service.
   findAllRaw() {
     return this.prisma.product.findMany()
   }
 
-  // Used by order-service via TCP `search_products`
+  // Used by order-service via the TCP `search_products` pattern to resolve
+  // product IDs from a name query before filtering orders locally.
   searchByName(name: string) {
     return this.prisma.product.findMany({ where: { name: { contains: name } } })
   }

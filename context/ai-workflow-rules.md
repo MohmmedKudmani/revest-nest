@@ -17,7 +17,8 @@ Always follow this sequence for any new feature:
 3. Service — implement business logic with Prisma calls
 4. Controller — wire HTTP routes and/or TCP message patterns
 5. Module — register all providers, imports, controllers
-6. Verify — test the endpoint manually before marking done
+6. Document — only when explicitly asked; see Documentation Rules below
+7. Verify — test the endpoint manually before marking done
 
 ## Scoping Rules
 
@@ -67,6 +68,24 @@ After both services are running, verify TCP works by:
 
 - Do not invent behavior not defined in `architecture.md` or `project-overview.md`
 - If a requirement is ambiguous, clarify with the user before implementing
+
+## Documentation Rules
+
+**Only add comments when the user explicitly asks.** Do not add comments while writing or editing code — it wastes tokens and adds noise. When asked, add a comment when the **why** is not obvious from the code itself. Do not comment what the code does — comment why it does it that way.
+
+Comment these situations:
+- A constraint or invariant that isn't visible in the types (e.g. "TCP and HTTP cannot share a port")
+- A workaround for a library limitation (e.g. "Prisma 7 requires a driver adapter for SQLite")
+- A deliberate trade-off or design decision (e.g. "totalPrice is locked at creation so it survives product price changes")
+- Non-obvious fallback or short-circuit behaviour (e.g. "returns empty page immediately to avoid a useless DB query")
+- Environment-specific defaults (e.g. "DATABASE_URL fallback keeps local pnpm dev working without extra setup")
+
+Do NOT comment:
+- What a function does when the name already says it (e.g. `// creates a product`)
+- Standard NestJS/Prisma boilerplate that any developer in this stack would recognise
+- Temporary state or task context — those belong in commit messages, not code
+
+Keep comments short: one or two lines max. If it takes more than two lines to explain the why, consider whether the code itself should be restructured.
 
 ## TypeScript Error Policy
 

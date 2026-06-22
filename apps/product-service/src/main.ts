@@ -10,8 +10,9 @@ async function bootstrap() {
   app.enableShutdownHooks()
   app.enableCors()
 
-  // TCP listener (internal) — used by order-service to call get_product / get_all_products
-  // Uses a separate port from HTTP so both transports can bind independently.
+  // TCP listener for inter-service communication (called by order-service).
+  // Must bind on a separate port from HTTP — NestJS cannot share a single port
+  // between two different transports.
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: { host: '0.0.0.0', port: 3100 },
