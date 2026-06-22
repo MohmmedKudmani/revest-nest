@@ -18,20 +18,20 @@ export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Res() res: Response) {
     try {
-      const user = await this.usersService.findById(id);
+      const user = await this.usersService.findById(id)
       if (!user) {
         return res.status(404).json({
           statusCode: 404,
           message: 'User not found',
-        });
+        })
       }
-      return res.json(user);
+      return res.json(user)
     } catch (error) {
-      console.error(error);
+      console.error(error)
       return res.status(500).json({
         statusCode: 500,
         message: 'Internal server error',
-      });
+      })
     }
   }
 }
@@ -45,11 +45,11 @@ export class UsersController {
 export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<User> {
-    const user = await this.usersService.findById(id);
+    const user = await this.usersService.findById(id)
     if (!user) {
-      throw new NotFoundException(`User #${id} not found`);
+      throw new NotFoundException(`User #${id} not found`)
     }
-    return user;
+    return user
   }
 }
 
@@ -61,7 +61,7 @@ export class UserNotFoundException extends NotFoundException {
       error: 'Not Found',
       message: `User with ID "${userId}" not found`,
       code: 'USER_NOT_FOUND',
-    });
+    })
   }
 }
 
@@ -69,11 +69,11 @@ export class UserNotFoundException extends NotFoundException {
 @Catch(DomainException)
 export class DomainExceptionFilter implements ExceptionFilter {
   catch(exception: DomainException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const ctx = host.switchToHttp()
+    const response = ctx.getResponse<Response>()
+    const request = ctx.getRequest<Request>()
 
-    const status = exception.getStatus?.() || 400;
+    const status = exception.getStatus?.() || 400
 
     response.status(status).json({
       statusCode: status,
@@ -81,7 +81,7 @@ export class DomainExceptionFilter implements ExceptionFilter {
       message: exception.message,
       timestamp: new Date().toISOString(),
       path: request.url,
-    });
+    })
   }
 }
 
@@ -91,31 +91,31 @@ export class AllExceptionsFilter implements ExceptionFilter {
   constructor(private readonly logger: Logger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const ctx = host.switchToHttp()
+    const response = ctx.getResponse<Response>()
+    const request = ctx.getRequest<Request>()
 
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        : HttpStatus.INTERNAL_SERVER_ERROR
 
     const message =
       exception instanceof HttpException
         ? exception.message
-        : 'Internal server error';
+        : 'Internal server error'
 
     this.logger.error(
       `${request.method} ${request.url}`,
       exception instanceof Error ? exception.stack : exception,
-    );
+    )
 
     response.status(status).json({
       statusCode: status,
       message,
       timestamp: new Date().toISOString(),
       path: request.url,
-    });
+    })
   }
 }
 
@@ -123,7 +123,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 app.useGlobalFilters(
   new AllExceptionsFilter(app.get(Logger)),
   new DomainExceptionFilter(),
-);
+)
 
 // Or via module
 @Module({

@@ -1,7 +1,7 @@
 ---
 title: Avoid Circular Dependencies
 impact: CRITICAL
-impactDescription: "#1 cause of runtime crashes"
+impactDescription: '#1 cause of runtime crashes'
 tags: architecture, modules, dependencies
 ---
 
@@ -61,9 +61,9 @@ export class UsersService {
   constructor(private eventEmitter: EventEmitter2) {}
 
   async createUser(data: CreateUserDto) {
-    const user = await this.userRepo.save(data);
-    this.eventEmitter.emit('user.created', user);
-    return user;
+    const user = await this.userRepo.save(data)
+    this.eventEmitter.emit('user.created', user)
+    return user
   }
 }
 

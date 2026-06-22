@@ -54,7 +54,7 @@ import { Prisma } from '../generated/client'
 
 const conditions = [
   Prisma.sql`role = ${'ADMIN'}`,
-  Prisma.sql`verified = ${true}`
+  Prisma.sql`verified = ${true}`,
 ]
 
 const users = await prisma.$queryRaw`
@@ -100,7 +100,7 @@ For fully dynamic queries (use with caution!):
 const table = 'User'
 const users = await prisma.$queryRawUnsafe(
   `SELECT * FROM "${table}" WHERE id = $1`,
-  userId
+  userId,
 )
 ```
 
@@ -110,7 +110,7 @@ const users = await prisma.$queryRawUnsafe(
 const result = await prisma.$executeRawUnsafe(
   'UPDATE "User" SET name = $1 WHERE id = $2',
   'Alice',
-  1
+  1,
 )
 ```
 
@@ -132,7 +132,7 @@ const users = await prisma.$queryRaw`
 // ❌ SQL injection vulnerability!
 const email = userInput
 const users = await prisma.$queryRawUnsafe(
-  `SELECT * FROM "User" WHERE email = '${email}'`
+  `SELECT * FROM "User" WHERE email = '${email}'`,
 )
 ```
 

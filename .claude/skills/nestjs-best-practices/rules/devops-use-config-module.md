@@ -21,7 +21,7 @@ export class DatabaseService {
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT), // NaN if missing
       password: process.env.DB_PASSWORD, // undefined if missing
-    });
+    })
   }
 }
 
@@ -30,7 +30,7 @@ export class DatabaseService {
 export class EmailService {
   sendEmail() {
     // Different services access env differently
-    const apiKey = process.env.SENDGRID_API_KEY || 'default';
+    const apiKey = process.env.SENDGRID_API_KEY || 'default'
     // Typos go unnoticed: process.env.SENDGRID_API_KY
   }
 }
@@ -40,8 +40,8 @@ export class EmailService {
 
 ```typescript
 // Setup validated configuration
-import { ConfigModule, ConfigService, registerAs } from '@nestjs/config';
-import * as Joi from 'joi';
+import { ConfigModule, ConfigService, registerAs } from '@nestjs/config'
+import * as Joi from 'joi'
 
 // config/database.config.ts
 export const databaseConfig = registerAs('database', () => ({
@@ -50,14 +50,14 @@ export const databaseConfig = registerAs('database', () => ({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-}));
+}))
 
 // config/app.config.ts
 export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
   environment: process.env.NODE_ENV || 'development',
   apiPrefix: process.env.API_PREFIX || 'api',
-}));
+}))
 
 // config/validation.schema.ts
 export const validationSchema = Joi.object({
@@ -72,7 +72,7 @@ export const validationSchema = Joi.object({
   DB_NAME: Joi.string().required(),
   JWT_SECRET: Joi.string().min(32).required(),
   REDIS_URL: Joi.string().uri().required(),
-});
+})
 
 // app.module.ts
 @Module({
@@ -104,17 +104,17 @@ export class AppModule {}
 
 // Type-safe configuration access
 export interface AppConfig {
-  port: number;
-  environment: 'development' | 'production' | 'test';
-  apiPrefix: string;
+  port: number
+  environment: 'development' | 'production' | 'test'
+  apiPrefix: string
 }
 
 export interface DatabaseConfig {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  database: string;
+  host: string
+  port: number
+  username: string
+  password: string
+  database: string
 }
 
 // Type-safe access
@@ -124,11 +124,11 @@ export class AppService {
 
   getPort(): number {
     // Type-safe with generic
-    return this.config.get<number>('app.port');
+    return this.config.get<number>('app.port')
   }
 
   getDatabaseConfig(): DatabaseConfig {
-    return this.config.get<DatabaseConfig>('database');
+    return this.config.get<DatabaseConfig>('database')
   }
 }
 
@@ -140,8 +140,8 @@ export class DatabaseService {
     private dbConfig: ConfigType<typeof databaseConfig>,
   ) {
     // Full type inference!
-    const host = this.dbConfig.host; // string
-    const port = this.dbConfig.port; // number
+    const host = this.dbConfig.host // string
+    const port = this.dbConfig.port // number
   }
 }
 
@@ -153,7 +153,7 @@ ConfigModule.forRoot({
     '.env.local',
     '.env',
   ],
-});
+})
 
 // .env.development
 // DB_HOST=localhost

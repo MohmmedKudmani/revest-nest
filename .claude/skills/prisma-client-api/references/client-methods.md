@@ -16,6 +16,7 @@ await prisma.$connect()
 ### When to use
 
 Usually not needed - Prisma connects automatically on first query. Use for:
+
 - Fail fast on startup
 - Health checks
 - Pre-warming connections
@@ -71,7 +72,7 @@ Subscribe to events:
 ```typescript
 const prisma = new PrismaClient({
   adapter,
-  log: [{ level: 'query', emit: 'event' }]
+  log: [{ level: 'query', emit: 'event' }],
 })
 
 prisma.$on('query', (e) => {
@@ -89,8 +90,8 @@ const prisma = new PrismaClient({
   log: [
     { level: 'info', emit: 'event' },
     { level: 'warn', emit: 'event' },
-    { level: 'error', emit: 'event' }
-  ]
+    { level: 'error', emit: 'event' },
+  ],
 })
 
 prisma.$on('info', (e) => console.log(e.message))
@@ -107,8 +108,8 @@ Add extensions for custom behavior:
 ```typescript
 const prisma = new PrismaClient({ adapter }).$extends({
   client: {
-    $log: (message: string) => console.log(message)
-  }
+    $log: (message: string) => console.log(message),
+  },
 })
 
 prisma.$log('Hello!')
@@ -122,9 +123,9 @@ const prisma = new PrismaClient({ adapter }).$extends({
     user: {
       async findByEmail(email: string) {
         return prisma.user.findUnique({ where: { email } })
-      }
-    }
-  }
+      },
+    },
+  },
 })
 
 const user = await prisma.user.findByEmail('alice@prisma.io')
@@ -140,9 +141,9 @@ const prisma = new PrismaClient({ adapter }).$extends({
         // Add default filter
         args.where = { ...args.where, deletedAt: null }
         return query(args)
-      }
-    }
-  }
+      },
+    },
+  },
 })
 ```
 
@@ -156,10 +157,10 @@ const prisma = new PrismaClient({ adapter }).$extends({
         needs: { firstName: true, lastName: true },
         compute(user) {
           return `${user.firstName} ${user.lastName}`
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 })
 
 const user = await prisma.user.findFirst()
@@ -211,12 +212,12 @@ import { Prisma } from '../generated/client'
 const userSelect = {
   id: true,
   email: true,
-  name: true
+  name: true,
 } satisfies Prisma.UserSelect
 
 const user = await prisma.user.findUnique({
   where: { id: 1 },
-  select: userSelect
+  select: userSelect,
 })
 ```
 

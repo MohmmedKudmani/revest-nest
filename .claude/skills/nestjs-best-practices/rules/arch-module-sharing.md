@@ -16,10 +16,10 @@ NestJS modules are singletons by default. When a service is properly exported fr
 // storage.service.ts
 @Injectable()
 export class StorageService {
-  private cache = new Map(); // Each instance has separate state!
+  private cache = new Map() // Each instance has separate state!
 
   store(key: string, value: any) {
-    this.cache.set(key, value);
+    this.cache.set(key, value)
   }
 }
 

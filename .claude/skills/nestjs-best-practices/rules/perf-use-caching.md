@@ -24,7 +24,7 @@ export class ProductsService {
       .groupBy('p.id')
       .orderBy('orderCount', 'DESC')
       .limit(20)
-      .getMany();
+      .getMany()
   }
 }
 
@@ -36,7 +36,7 @@ export class UsersService {
   @UseInterceptors(CacheInterceptor)
   async findAll(): Promise<User[]> {
     // Caching user list for 1 hour is wrong if data changes frequently
-    return this.usersRepo.find();
+    return this.usersRepo.find()
   }
 }
 ```
@@ -51,9 +51,7 @@ export class UsersService {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        stores: [
-          new KeyvRedis(config.get('REDIS_URL')),
-        ],
+        stores: [new KeyvRedis(config.get('REDIS_URL'))],
         ttl: 60 * 1000, // Default 60s
       }),
     }),
@@ -70,23 +68,23 @@ export class ProductsService {
   ) {}
 
   async getPopular(): Promise<Product[]> {
-    const cacheKey = 'products:popular';
+    const cacheKey = 'products:popular'
 
     // Try cache first
-    const cached = await this.cache.get<Product[]>(cacheKey);
-    if (cached) return cached;
+    const cached = await this.cache.get<Product[]>(cacheKey)
+    if (cached) return cached
 
     // Cache miss - fetch and cache
-    const products = await this.fetchPopularProducts();
-    await this.cache.set(cacheKey, products, 5 * 60 * 1000); // 5 min TTL
-    return products;
+    const products = await this.fetchPopularProducts()
+    await this.cache.set(cacheKey, products, 5 * 60 * 1000) // 5 min TTL
+    return products
   }
 
   // Invalidate cache on changes
   async updateProduct(id: string, dto: UpdateProductDto): Promise<Product> {
-    const product = await this.productsRepo.save({ id, ...dto });
-    await this.cache.del('products:popular'); // Invalidate
-    return product;
+    const product = await this.productsRepo.save({ id, ...dto })
+    await this.cache.del('products:popular') // Invalidate
+    return product
   }
 }
 
@@ -97,14 +95,14 @@ export class CategoriesController {
   @Get()
   @CacheTTL(30 * 60 * 1000) // 30 minutes - categories rarely change
   findAll(): Promise<Category[]> {
-    return this.categoriesService.findAll();
+    return this.categoriesService.findAll()
   }
 
   @Get(':id')
   @CacheTTL(60 * 1000) // 1 minute
   @CacheKey('category')
   findOne(@Param('id') id: string): Promise<Category> {
-    return this.categoriesService.findOne(id);
+    return this.categoriesService.findOne(id)
   }
 }
 
@@ -120,7 +118,7 @@ export class CacheInvalidationService {
     await Promise.all([
       this.cache.del('products:popular'),
       this.cache.del(`product:${event.productId}`),
-    ]);
+    ])
   }
 }
 ```

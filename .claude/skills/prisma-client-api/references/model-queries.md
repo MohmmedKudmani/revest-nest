@@ -10,11 +10,11 @@ Find a single record by unique field:
 
 ```typescript
 const user = await prisma.user.findUnique({
-  where: { id: 1 }
+  where: { id: 1 },
 })
 
 const user = await prisma.user.findUnique({
-  where: { email: 'alice@prisma.io' }
+  where: { email: 'alice@prisma.io' },
 })
 ```
 
@@ -26,9 +26,9 @@ const user = await prisma.user.findUnique({
   where: {
     firstName_lastName: {
       firstName: 'Alice',
-      lastName: 'Smith'
-    }
-  }
+      lastName: 'Smith',
+    },
+  },
 })
 ```
 
@@ -38,7 +38,7 @@ Same as findUnique but throws if not found:
 
 ```typescript
 const user = await prisma.user.findUniqueOrThrow({
-  where: { id: 1 }
+  where: { id: 1 },
 })
 // Throws PrismaClientKnownRequestError if not found
 ```
@@ -50,7 +50,7 @@ Find first matching record:
 ```typescript
 const user = await prisma.user.findFirst({
   where: { role: 'ADMIN' },
-  orderBy: { createdAt: 'desc' }
+  orderBy: { createdAt: 'desc' },
 })
 ```
 
@@ -58,7 +58,7 @@ const user = await prisma.user.findFirst({
 
 ```typescript
 const user = await prisma.user.findFirstOrThrow({
-  where: { role: 'ADMIN' }
+  where: { role: 'ADMIN' },
 })
 ```
 
@@ -71,7 +71,7 @@ const users = await prisma.user.findMany({
   where: { role: 'USER' },
   orderBy: { name: 'asc' },
   take: 10,
-  skip: 0
+  skip: 0,
 })
 ```
 
@@ -85,8 +85,8 @@ Create a single record:
 const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
-    name: 'Alice'
-  }
+    name: 'Alice',
+  },
 })
 ```
 
@@ -97,13 +97,10 @@ const user = await prisma.user.create({
   data: {
     email: 'alice@prisma.io',
     posts: {
-      create: [
-        { title: 'First Post' },
-        { title: 'Second Post' }
-      ]
-    }
+      create: [{ title: 'First Post' }, { title: 'Second Post' }],
+    },
   },
-  include: { posts: true }
+  include: { posts: true },
 })
 ```
 
@@ -115,9 +112,9 @@ Create multiple records:
 const result = await prisma.user.createMany({
   data: [
     { email: 'alice@prisma.io', name: 'Alice' },
-    { email: 'bob@prisma.io', name: 'Bob' }
+    { email: 'bob@prisma.io', name: 'Bob' },
   ],
-  skipDuplicates: true  // Skip records with duplicate unique fields
+  skipDuplicates: true, // Skip records with duplicate unique fields
 })
 // Returns { count: 2 }
 ```
@@ -130,8 +127,8 @@ Create multiple and return them:
 const users = await prisma.user.createManyAndReturn({
   data: [
     { email: 'alice@prisma.io', name: 'Alice' },
-    { email: 'bob@prisma.io', name: 'Bob' }
-  ]
+    { email: 'bob@prisma.io', name: 'Bob' },
+  ],
 })
 // Returns array of created users
 ```
@@ -145,7 +142,7 @@ Update a single record:
 ```typescript
 const user = await prisma.user.update({
   where: { id: 1 },
-  data: { name: 'Alice Smith' }
+  data: { name: 'Alice Smith' },
 })
 ```
 
@@ -159,8 +156,8 @@ const post = await prisma.post.update({
     likes: { decrement: 1 },
     score: { multiply: 2 },
     rating: { divide: 2 },
-    version: { set: 5 }
-  }
+    version: { set: 5 },
+  },
 })
 ```
 
@@ -171,7 +168,7 @@ Update multiple records:
 ```typescript
 const result = await prisma.user.updateMany({
   where: { role: 'USER' },
-  data: { verified: true }
+  data: { verified: true },
 })
 // Returns { count: 42 }
 ```
@@ -181,7 +178,7 @@ const result = await prisma.user.updateMany({
 ```typescript
 const users = await prisma.user.updateManyAndReturn({
   where: { role: 'USER' },
-  data: { verified: true }
+  data: { verified: true },
 })
 // Returns array of updated users
 ```
@@ -194,7 +191,7 @@ Update or create:
 const user = await prisma.user.upsert({
   where: { email: 'alice@prisma.io' },
   update: { name: 'Alice Smith' },
-  create: { email: 'alice@prisma.io', name: 'Alice' }
+  create: { email: 'alice@prisma.io', name: 'Alice' },
 })
 ```
 
@@ -206,7 +203,7 @@ Delete a single record:
 
 ```typescript
 const user = await prisma.user.delete({
-  where: { id: 1 }
+  where: { id: 1 },
 })
 // Returns deleted record
 ```
@@ -217,7 +214,7 @@ Delete multiple records:
 
 ```typescript
 const result = await prisma.user.deleteMany({
-  where: { role: 'GUEST' }
+  where: { role: 'GUEST' },
 })
 // Returns { count: 5 }
 
@@ -231,7 +228,7 @@ const result = await prisma.user.deleteMany({})
 
 ```typescript
 const count = await prisma.user.count({
-  where: { role: 'ADMIN' }
+  where: { role: 'ADMIN' },
 })
 ```
 
@@ -243,7 +240,7 @@ const result = await prisma.post.aggregate({
   _sum: { views: true },
   _min: { views: true },
   _max: { views: true },
-  _count: { _all: true }
+  _count: { _all: true },
 })
 ```
 
@@ -255,27 +252,27 @@ const groups = await prisma.user.groupBy({
   _count: { _all: true },
   _avg: { age: true },
   having: {
-    age: { _avg: { gt: 30 } }
-  }
+    age: { _avg: { gt: 30 } },
+  },
 })
 ```
 
 ## Return Types
 
-| Method | Returns |
-|--------|---------|
-| `findUnique` | Record \| null |
-| `findUniqueOrThrow` | Record (throws if not found) |
-| `findFirst` | Record \| null |
-| `findFirstOrThrow` | Record (throws if not found) |
-| `findMany` | Record[] |
-| `create` | Record |
-| `createMany` | { count: number } |
-| `createManyAndReturn` | Record[] |
-| `update` | Record |
-| `updateMany` | { count: number } |
-| `delete` | Record |
-| `deleteMany` | { count: number } |
-| `count` | number |
-| `aggregate` | Aggregate result |
-| `groupBy` | Group result[] |
+| Method                | Returns                      |
+| --------------------- | ---------------------------- |
+| `findUnique`          | Record \| null               |
+| `findUniqueOrThrow`   | Record (throws if not found) |
+| `findFirst`           | Record \| null               |
+| `findFirstOrThrow`    | Record (throws if not found) |
+| `findMany`            | Record[]                     |
+| `create`              | Record                       |
+| `createMany`          | { count: number }            |
+| `createManyAndReturn` | Record[]                     |
+| `update`              | Record                       |
+| `updateMany`          | { count: number }            |
+| `delete`              | Record                       |
+| `deleteMany`          | { count: number }            |
+| `count`               | number                       |
+| `aggregate`           | Aggregate result             |
+| `groupBy`             | Group result[]               |

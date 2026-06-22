@@ -84,25 +84,25 @@ export class AuthService {
       email: user.email,
       roles: user.roles,
       iat: Math.floor(Date.now() / 1000),
-    };
+    }
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = await this.createRefreshToken(user.id);
+    const accessToken = this.jwtService.sign(payload)
+    const refreshToken = await this.createRefreshToken(user.id)
 
-    return { accessToken, refreshToken, expiresIn: 900 };
+    return { accessToken, refreshToken, expiresIn: 900 }
   }
 
   private async createRefreshToken(userId: string): Promise<string> {
-    const token = randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(token, 10);
+    const token = randomBytes(32).toString('hex')
+    const hashedToken = await bcrypt.hash(token, 10)
 
     await this.refreshTokenRepo.save({
       userId,
       token: hashedToken,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
+    })
 
-    return token;
+    return token
   }
 }
 
@@ -119,26 +119,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       issuer: config.get<string>('JWT_ISSUER'),
       audience: config.get<string>('JWT_AUDIENCE'),
-    });
+    })
   }
 
   async validate(payload: JwtPayload): Promise<User> {
     // Verify user still exists and is active
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService.findById(payload.sub)
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      throw new UnauthorizedException('User not found or inactive')
     }
 
     // Verify token wasn't issued before password change
     if (user.passwordChangedAt) {
-      const tokenIssuedAt = new Date(payload.iat * 1000);
+      const tokenIssuedAt = new Date(payload.iat * 1000)
       if (tokenIssuedAt < user.passwordChangedAt) {
-        throw new UnauthorizedException('Token invalidated by password change');
+        throw new UnauthorizedException('Token invalidated by password change')
       }
     }
 
-    return user;
+    return user
   }
 }
 ```

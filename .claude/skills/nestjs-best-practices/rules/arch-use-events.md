@@ -24,17 +24,17 @@ export class OrdersService {
   ) {}
 
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const order = await this.repo.save(dto);
+    const order = await this.repo.save(dto)
 
     // Tight coupling - OrdersService knows about all consumers
-    await this.inventoryService.reserve(order.items);
-    await this.emailService.sendConfirmation(order);
-    await this.analyticsService.track('order_created', order);
-    await this.notificationService.push(order.userId, 'Order placed');
-    await this.loyaltyService.addPoints(order.userId, order.total);
+    await this.inventoryService.reserve(order.items)
+    await this.emailService.sendConfirmation(order)
+    await this.analyticsService.track('order_created', order)
+    await this.notificationService.push(order.userId, 'Order placed')
+    await this.loyaltyService.addPoints(order.userId, order.total)
 
     // Adding new behavior requires modifying this service
-    return order;
+    return order
   }
 }
 ```
@@ -43,7 +43,7 @@ export class OrdersService {
 
 ```typescript
 // Use EventEmitter for decoupling
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter'
 
 // Define event
 export class OrderCreatedEvent {
@@ -64,15 +64,15 @@ export class OrdersService {
   ) {}
 
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const order = await this.repo.save(dto);
+    const order = await this.repo.save(dto)
 
     // Emit event - no knowledge of consumers
     this.eventEmitter.emit(
       'order.created',
       new OrderCreatedEvent(order.id, order.userId, order.items, order.total),
-    );
+    )
 
-    return order;
+    return order
   }
 }
 
@@ -81,7 +81,7 @@ export class OrdersService {
 export class InventoryListener {
   @OnEvent('order.created')
   async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
-    await this.inventoryService.reserve(event.items);
+    await this.inventoryService.reserve(event.items)
   }
 }
 
@@ -89,7 +89,7 @@ export class InventoryListener {
 export class EmailListener {
   @OnEvent('order.created')
   async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
-    await this.emailService.sendConfirmation(event.orderId);
+    await this.emailService.sendConfirmation(event.orderId)
   }
 }
 
@@ -100,7 +100,7 @@ export class AnalyticsListener {
     await this.analyticsService.track('order_created', {
       orderId: event.orderId,
       total: event.total,
-    });
+    })
   }
 }
 ```
