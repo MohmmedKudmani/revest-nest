@@ -9,7 +9,7 @@ HTTP Client
     │
     └── HTTP GET/POST → Order Service (:3002)
                             │
-                            └── TCP { cmd: 'get_product' } → Product Service TCP (:3001)
+                            └── TCP { cmd: 'get_product' } → Product Service TCP (:3100)
 ```
 
 Services never call each other over HTTP. Order Service calls Product Service exclusively via TCP.
@@ -17,6 +17,7 @@ Services never call each other over HTTP. Order Service calls Product Service ex
 ## Service Boundaries
 
 ### Product Service
+
 ```
 product-service/
 ├── src/
@@ -35,6 +36,7 @@ product-service/
 ```
 
 ### Order Service
+
 ```
 order-service/
 ├── src/
@@ -55,12 +57,15 @@ order-service/
 ## Communication Patterns
 
 ### HTTP (external)
+
 Standard REST. Both services expose HTTP on their respective ports.
 
 ### TCP (internal — order-service to product-service)
+
 NestJS microservices transport. Used only for order-service to call product-service.
 
 Message patterns:
+
 - `{ cmd: 'get_product' }` — payload: `productId: string` → returns Product or throws
 - `{ cmd: 'get_all_products' }` — payload: none → returns Product[]
 
@@ -71,6 +76,7 @@ Order Service injects `ClientProxy` via `@Inject('PRODUCT_SERVICE')` and calls `
 Each service has its own SQLite file. They never share tables or query each other's database directly.
 
 ### Product Service — `prisma/schema.prisma`
+
 ```prisma
 datasource db {
   provider = "sqlite"
@@ -89,6 +95,7 @@ model Product {
 ```
 
 ### Order Service — `prisma/schema.prisma`
+
 ```prisma
 datasource db {
   provider = "sqlite"
@@ -115,24 +122,32 @@ model Order {
 ## main.ts Patterns
 
 ### Product Service — Hybrid App
+
 ```typescript
-const app = await NestFactory.create(AppModule);
-app.connectMicroservice({ transport: Transport.TCP, options: { host: '0.0.0.0', port: 3001 } });
-await app.startAllMicroservices();
-await app.listen(3001);
+const app = await NestFactory.create(AppModule)
+// TCP (internal, port 3100) and HTTP (external, port 3001) must be on different ports —
+// they are independent servers and cannot share a port.
+app.connectMicroservice({
+  transport: Transport.TCP,
+  options: { host: '0.0.0.0', port: 3100 },
+})
+await app.startAllMicroservices()
+await app.listen(3001)
 ```
 
 ### Order Service — Standard HTTP
+
 ```typescript
-const app = await NestFactory.create(AppModule);
-await app.listen(3002);
+const app = await NestFactory.create(AppModule)
+await app.listen(3002)
 ```
 
 ## Invariants
 
 These must never be violated:
+
 1. Services never share a database file
 2. Order Service never calls Product Service via HTTP
 3. `totalPrice` is always computed and stored at order creation — never computed on read
-5. Each service runs its own Prisma migration independently
-6. No shared code or shared modules between services — copy `PrismaService` into each
+4. Each service runs its own Prisma migration independently
+5. No shared code or shared modules between services — copy `PrismaService` into each

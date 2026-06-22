@@ -18,7 +18,6 @@ Always follow this sequence for any new feature:
 4. Controller — wire HTTP routes and/or TCP message patterns
 5. Module — register all providers, imports, controllers
 6. Verify — test the endpoint manually before marking done
-7. Update `progress-tracker.md`
 
 ## Scoping Rules
 
@@ -29,6 +28,7 @@ Always follow this sequence for any new feature:
 ## When to Split Work
 
 Split if the step combines:
+
 - Schema change AND service logic change
 - Multiple unrelated controller methods
 - Product Service work AND Order Service work simultaneously
@@ -44,15 +44,20 @@ Rationale: Order Service depends on Product Service's TCP patterns being stable.
 ## Running Each Service
 
 ```bash
-# Inside product-service/ or order-service/
-npm run start:dev      # dev mode with watch
-npx prisma migrate dev --name init   # first time only
-npx prisma studio                    # inspect DB in browser
+# From repo root
+pnpm run dev                                                         # watch mode, both services
+pnpm exec nest start product-service --watch                        # single service
+
+# Inside apps/product-service/ or apps/order-service/
+pnpm exec prisma migrate dev --name init --config src/db/prisma.config.ts   # first time only
+pnpm exec prisma generate --config src/db/prisma.config.ts                  # after schema changes
+pnpm exec prisma studio --config src/db/prisma.config.ts                    # inspect DB in browser
 ```
 
 ## Verifying TCP Communication
 
 After both services are running, verify TCP works by:
+
 1. Creating a product via `POST /products`
 2. Creating an order with that product's ID via `POST /orders`
 3. Confirming the order response includes the enriched `product` object
@@ -61,18 +66,36 @@ After both services are running, verify TCP works by:
 ## Handling Missing Requirements
 
 - Do not invent behavior not defined in `architecture.md` or `project-overview.md`
-- If a requirement is ambiguous, add it as an open question in `progress-tracker.md` before implementing
+- If a requirement is ambiguous, clarify with the user before implementing
+
+## TypeScript Error Policy
+
+**Never run `pnpm run build` until all TypeScript and ESLint errors are resolved first.**
+
+Workflow order:
+
+1. Write or edit code
+2. Invoke the `nestjs-best-practices` skill to cross-check patterns before finalising any NestJS code
+3. Read through every file changed and confirm there are no TypeScript errors visible (type mismatches, implicit `any`, unnecessary assertions, missing types)
+4. Resolve all ESLint TypeScript errors — especially `no-unsafe-assignment`, `no-unsafe-call`, `no-unsafe-member-access`, `no-unsafe-return`, `no-unnecessary-type-assertion`
+5. Only then run `pnpm run build` as a final gate
+
+Rules:
+
+- Never use `any` implicitly — if a third-party API returns `any` (e.g. `ClientProxy.send()`), always type it explicitly with a generic: `firstValueFrom<MyType>(...)`
+- Never add type assertions (`as X`) unless TypeScript cannot infer the type on its own — if ESLint flags it as unnecessary, remove it
+- All types come from `src/schemas/` — never import entity types from `src/db/generated/`
 
 ## Before Moving to the Next Unit
 
 1. The current unit works end to end within its defined scope
 2. No invariant from `architecture.md` was violated
-3. `progress-tracker.md` reflects the completed work
-4. The service starts without TypeScript errors (`npm run build` passes)
+3. `pnpm run build` passes and all TypeScript/ESLint errors are resolved
 
 ## Protected Patterns
 
 Do not change these unless explicitly instructed:
+
 - The TCP transport type — keep it TCP, do not switch to Redis or RabbitMQ
 - The `firstValueFrom()` pattern for TCP calls — do not use `.subscribe()` or `.toPromise()`
 - SQLite as the database — do not switch to PostgreSQL

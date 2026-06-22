@@ -26,6 +26,7 @@
 ## Controllers
 
 ### HTTP Controllers
+
 ```typescript
 @Controller('products')
 export class ProductsController {
@@ -33,12 +34,13 @@ export class ProductsController {
 
   @Post()
   create(@Body() dto: CreateProductDto) {
-    return this.productsService.create(dto);
+    return this.productsService.create(dto)
   }
 }
 ```
 
 ### TCP Message Handlers (Product Service only)
+
 ```typescript
 @MessagePattern({ cmd: 'get_product' })
 getProductTCP(id: string) {
@@ -58,6 +60,7 @@ Every feature has a single `feature.schema.ts` file colocated with the feature. 
 `nestjs-zod` handles validation and Swagger automatically from the Zod schema.
 
 ### Install
+
 ```bash
 npm install nestjs-zod zod
 ```
@@ -123,18 +126,59 @@ export type UpdateOrderInput = z.infer<typeof UpdateOrderSchema>
 
 ## Prisma Service
 
-Same pattern in both services:
+**Prisma 7 — driver-adapter pattern** (used by both services).
+The client is generated into `src/db/generated/` (gitignored) — run `pnpm exec prisma generate --config src/db/prisma.config.ts` (from the service root) after any schema change.
 
 ```typescript
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { join } from 'node:path'
+import { PrismaClient } from './generated/client' // generated output path (src/db/generated/)
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+
+// Absolute path anchored to repo root so CLI and runtime agree on the same DB file.
+const dbUrl = `file:${join(process.cwd(), 'apps/<service-name>/src/db/prisma/dev.db')}`
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  constructor() {
+    super({ adapter: new PrismaBetterSqlite3({ url: dbUrl }) })
+  }
   async onModuleInit() {
-    await this.$connect();
+    await this.$connect()
+  }
+  async onModuleDestroy() {
+    await this.$disconnect()
   }
 }
+```
+
+Schema generator block (`src/db/prisma/schema.prisma`):
+
+```prisma
+generator client {
+  provider            = "prisma-client"
+  output              = "../generated"
+  moduleFormat        = "cjs"
+  runtime             = "nodejs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "sqlite"
+}
+```
+
+Connection URL lives in `src/db/prisma.config.ts` (Prisma 7 requirement):
+
+```typescript
+import { defineConfig } from 'prisma/config'
+export default defineConfig({
+  schema: 'prisma/schema.prisma', // → src/db/prisma/schema.prisma
+  datasource: { url: 'file:./prisma/dev.db' }, // → src/db/prisma/dev.db
+})
 ```
 
 Do not copy-paste Prisma query logic into controllers. Keep all `this.prisma.*` calls inside the service.
@@ -176,8 +220,8 @@ const product = await firstValueFrom(
 Use NestJS built-in exceptions — do not invent custom error classes for this assignment:
 
 ```typescript
-throw new NotFoundException(`Product ${id} not found`);
-throw new BadRequestException('Invalid status value');
+throw new NotFoundException(`Product ${id} not found`)
+throw new BadRequestException('Invalid status value')
 ```
 
 NestJS maps these to correct HTTP status codes automatically. Do not catch and re-throw NestJS exceptions — let the global exception filter handle them.
@@ -217,17 +261,17 @@ Do not use `ValidationPipe` from `@nestjs/common` — `ZodValidationPipe` replac
 
 ## Naming Conventions
 
-| Thing | Convention | Example |
-|---|---|---|
-| Module file | `feature.module.ts` | `products.module.ts` |
-| Controller | `feature.controller.ts` | `products.controller.ts` |
-| Service | `feature.service.ts` | `products.service.ts` |
-| Schema file | `feature.schema.ts` | `product.schema.ts` |
-| Zod schema | `VerbFeatureSchema` | `CreateProductSchema` |
-| DTO class | `VerbFeatureDto` | `CreateProductDto` |
-| Type | `VerbFeatureInput` | `CreateProductInput` |
-| TCP pattern | `{ cmd: 'verb_noun' }` | `{ cmd: 'get_product' }` |
-| Injection token | `'SERVICE_NAME'` all caps | `'PRODUCT_SERVICE'` |
+| Thing           | Convention                | Example                  |
+| --------------- | ------------------------- | ------------------------ |
+| Module file     | `feature.module.ts`       | `products.module.ts`     |
+| Controller      | `feature.controller.ts`   | `products.controller.ts` |
+| Service         | `feature.service.ts`      | `products.service.ts`    |
+| Schema file     | `feature.schema.ts`       | `product.schema.ts`      |
+| Zod schema      | `VerbFeatureSchema`       | `CreateProductSchema`    |
+| DTO class       | `VerbFeatureDto`          | `CreateProductDto`       |
+| Type            | `VerbFeatureInput`        | `CreateProductInput`     |
+| TCP pattern     | `{ cmd: 'verb_noun' }`    | `{ cmd: 'get_product' }` |
+| Injection token | `'SERVICE_NAME'` all caps | `'PRODUCT_SERVICE'`      |
 
 ## File Organization
 
