@@ -1,0 +1,21 @@
+generator client {
+  provider              = "prisma-client"
+  output                = "../generated"
+  moduleFormat          = "cjs"
+  runtime               = "nodejs"
+  importFileExtension   = ""
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  productId  String
+  quantity   Int
+  totalPrice Float
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
