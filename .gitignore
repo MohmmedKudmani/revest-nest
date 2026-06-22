@@ -52,6 +52,9 @@ lerna-debug.log*
 *.db-wal
 *.db-shm
 
+# Prisma generated clients (regenerated from schema via `pnpm exec prisma generate`)
+**/src/db/generated/
+
 # Runtime data
 pids
 *.pid

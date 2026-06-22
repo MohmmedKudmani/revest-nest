@@ -1,0 +1,70 @@
+services:
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: revest-nest:latest
+    command: ['product-service']
+    environment:
+      DATABASE_URL: file:/data/dev.db
+    ports:
+      - '3001:3001' # HTTP — Swagger at http://localhost:3001/api/docs
+      # TCP :3100 stays on the internal network; not exposed to the host
+    volumes:
+      - product_data:/data
+    networks:
+      - revest
+    init: true
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/products',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: revest-nest:latest
+    command: ['order-service']
+    environment:
+      DATABASE_URL: file:/data/dev.db
+      PRODUCT_SERVICE_HOST: product-service
+      PRODUCT_SERVICE_TCP_PORT: '3100'
+    ports:
+      - '3002:3002' # HTTP — Swagger at http://localhost:3002/api/docs
+    depends_on:
+      product-service:
+        condition: service_healthy
+    volumes:
+      - order_data:/data
+    networks:
+      - revest
+    init: true
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3002/orders',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  product_data:
+  order_data:
+
+networks:
+  revest:
+    driver: bridge
