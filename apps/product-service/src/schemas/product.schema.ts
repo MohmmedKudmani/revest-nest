@@ -71,7 +71,15 @@ export type ProductQueryInput = z.infer<typeof ProductQuerySchema>
 // ── Response DTOs (used by controllers for Swagger @ApiResponse type:) ────────
 // z.date() cannot be serialised to JSON Schema (Zod v4), so dates are z.string() here.
 
-const ProductSwaggerSchema = ProductSchema.extend({ createdAt: z.string(), updatedAt: z.string() })
+const ProductSwaggerSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  price: z.number(),
+  stock: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
 
 export const ProductResponseSchema = z.object({ message: z.string(), data: ProductSwaggerSchema })
 export class ProductResponseDto extends createZodDto(ProductResponseSchema) {}

@@ -81,10 +81,34 @@ export type OrderQueryInput = z.infer<typeof OrderQuerySchema>
 
 import { PaginationSchema } from './pagination.schema'
 
-const datesToString = { createdAt: z.string(), updatedAt: z.string() }
-const OrderSwaggerSchema = OrderSchema.extend(datesToString)
-const ProductSnapshotSwaggerSchema = ProductSnapshotSchema.extend(datesToString)
-const OrderWithProductSwaggerSchema = OrderSwaggerSchema.extend({
+const ProductSnapshotSwaggerSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  price: z.number(),
+  stock: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const OrderSwaggerSchema = z.object({
+  id: z.uuid(),
+  productId: z.string(),
+  quantity: z.number().int(),
+  totalPrice: z.number(),
+  status: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const OrderWithProductSwaggerSchema = z.object({
+  id: z.uuid(),
+  productId: z.string(),
+  quantity: z.number().int(),
+  totalPrice: z.number(),
+  status: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   product: ProductSnapshotSwaggerSchema.nullable(),
 })
 
