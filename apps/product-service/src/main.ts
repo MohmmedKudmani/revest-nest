@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './filters/http-exception.filter'
+import { ResponseInterceptor } from './interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -19,6 +20,7 @@ async function bootstrap() {
   })
 
   app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalInterceptors(new ResponseInterceptor())
   app.useGlobalPipes(new ZodValidationPipe())
 
   const config = new DocumentBuilder()
