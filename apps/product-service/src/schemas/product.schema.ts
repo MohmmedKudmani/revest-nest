@@ -37,6 +37,16 @@ export class UpdateProductDto extends createZodDto(UpdateProductSchema) {}
 export type CreateProductInput = z.infer<typeof CreateProductSchema>
 export type UpdateProductInput = z.infer<typeof UpdateProductSchema>
 
+// ── TCP stock mutation payload ────────────────────────────────────────────────
+// Used by the decrement_stock / restore_stock TCP handlers.
+
+export const StockAdjustmentSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: z.number().int().min(1),
+})
+
+export type StockAdjustmentInput = z.infer<typeof StockAdjustmentSchema>
+
 // ── Query (search, filters, sorting, pagination) ─────────────────────────────
 // z.coerce.number() is required because all query params arrive as strings from
 // the URL. z.stringbool() handles "true"/"false" strings for boolean flags.

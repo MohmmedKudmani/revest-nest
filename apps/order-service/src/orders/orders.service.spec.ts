@@ -195,6 +195,7 @@ describe('OrdersService', () => {
   describe('update', () => {
     it('should update and return the order', async () => {
       const updated: Order = { ...mockOrder, status: 'CONFIRMED' }
+      mockPrisma.order.findUnique.mockResolvedValue(mockOrder)
       mockPrisma.order.update.mockResolvedValue(updated)
 
       const result = await service.update('order-uuid-1', {

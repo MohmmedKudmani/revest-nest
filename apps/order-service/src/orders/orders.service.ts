@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { firstValueFrom } from 'rxjs'
 import { PrismaService } from '../db/prisma.service'
@@ -33,6 +33,26 @@ export class OrdersService {
       this.productClient.send({ cmd: 'get_product' }, data.productId),
     )
     if (!product) throw new NotFoundException('Product not found')
+
+    // Fast pre-check: friendly error before the atomic TCP call below.
+    if (data.quantity > product.stock) {
+      throw new BadRequestException(
+        `Insufficient stock: requested ${data.quantity}, available ${product.stock}`,
+      )
+    }
+
+    // Atomically reserve stock on product-service — final authority, closes
+    // the race between the pre-check above and the actual decrement.
+    await firstValueFrom<ProductSnapshot>(
+      this.productClient.send(
+        { cmd: 'decrement_stock' },
+        { productId: data.productId, quantity: data.quantity },
+      ),
+    ).catch((err: unknown) => {
+      const msg =
+        err instanceof Error ? err.message : 'Insufficient stock'
+      throw new BadRequestException(msg)
+    })
 
     // Explicit intermediate variable breaks the `any` chain from ClientProxy.send()
     // so ESLint can confirm price is a number before arithmetic.
@@ -122,11 +142,36 @@ export class OrdersService {
     return { ...order, product }
   }
 
-  update(id: string, data: UpdateOrderInput) {
+  async update(id: string, data: UpdateOrderInput) {
+    const order = await this.prisma.order.findUnique({ where: { id } })
+    if (!order) throw new NotFoundException('Order not found')
+
+    // Restore stock only on the first transition to CANCELLED so we never
+    // double-restore if the order was already cancelled.
+    if (data.status === 'CANCELLED' && order.status !== 'CANCELLED') {
+      await this.restoreStock(order.productId, order.quantity)
+    }
+
     return this.prisma.order.update({ where: { id }, data })
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } })
+    if (!order) throw new NotFoundException('Order not found')
+
+    // A cancelled order already returned its stock — don't restore a second time.
+    if (order.status !== 'CANCELLED') {
+      await this.restoreStock(order.productId, order.quantity)
+    }
+
     return this.prisma.order.delete({ where: { id } })
+  }
+
+  // Tolerates a product that was deleted after the order was placed — if
+  // product-service throws, the cancel/delete still succeeds.
+  private async restoreStock(productId: string, quantity: number): Promise<void> {
+    await firstValueFrom<ProductSnapshot>(
+      this.productClient.send({ cmd: 'restore_stock' }, { productId, quantity }),
+    ).catch(() => undefined)
   }
 }

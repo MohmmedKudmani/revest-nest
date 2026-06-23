@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../db/prisma.service'
 import { buildPagination } from '../lib/utils'
 import { Paginated } from '../schemas/pagination.schema'
@@ -85,5 +85,30 @@ export class ProductsService {
 
   remove(id: string) {
     return this.prisma.product.delete({ where: { id } })
+  }
+
+  // Atomically decrements stock by quantity only if enough stock exists.
+  // A single updateMany with the gte guard closes the check-then-write race —
+  // concurrent orders can't both pass the same guard in SQLite.
+  async decrementStock(productId: string, quantity: number): Promise<Product> {
+    const result = await this.prisma.product.updateMany({
+      where: { id: productId, stock: { gte: quantity } },
+      data: { stock: { decrement: quantity } },
+    })
+    if (result.count === 0) {
+      const product = await this.prisma.product.findUnique({ where: { id: productId } })
+      if (!product) throw new NotFoundException('Product not found')
+      throw new BadRequestException(
+        `Insufficient stock: requested ${quantity}, available ${product.stock}`,
+      )
+    }
+    return this.prisma.product.findUniqueOrThrow({ where: { id: productId } })
+  }
+
+  restoreStock(productId: string, quantity: number): Promise<Product> {
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { stock: { increment: quantity } },
+    })
   }
 }

@@ -21,6 +21,7 @@ import {
   UpdateProductDto,
   ProductQueryDto,
 } from '../schemas/product.schema'
+import type { StockAdjustmentInput } from '../schemas/product.schema'
 
 @ApiTags('Products')
 @Controller('products')
@@ -90,5 +91,17 @@ export class ProductsController {
   @MessagePattern({ cmd: 'search_products' })
   searchProductsTCP(name: string) {
     return this.productsService.searchByName(name)
+  }
+
+  @ApiExcludeEndpoint()
+  @MessagePattern({ cmd: 'decrement_stock' })
+  decrementStockTCP(payload: StockAdjustmentInput) {
+    return this.productsService.decrementStock(payload.productId, payload.quantity)
+  }
+
+  @ApiExcludeEndpoint()
+  @MessagePattern({ cmd: 'restore_stock' })
+  restoreStockTCP(payload: StockAdjustmentInput) {
+    return this.productsService.restoreStock(payload.productId, payload.quantity)
   }
 }
