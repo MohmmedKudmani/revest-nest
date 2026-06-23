@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createZodDto } from 'nestjs-zod'
+import { PaginationSchema } from './pagination.schema'
 
 // ── Entity ────────────────────────────────────────────────────────────────────
 // Single source of truth for the Product shape. All service methods and TCP
@@ -66,3 +67,19 @@ export const ProductQuerySchema = z.object({
 
 export class ProductQueryDto extends createZodDto(ProductQuerySchema) {}
 export type ProductQueryInput = z.infer<typeof ProductQuerySchema>
+
+// ── Response DTOs (used by controllers for Swagger @ApiResponse type:) ────────
+// z.date() cannot be serialised to JSON Schema (Zod v4), so dates are z.string() here.
+
+const ProductSwaggerSchema = ProductSchema.extend({ createdAt: z.string(), updatedAt: z.string() })
+
+export const ProductResponseSchema = z.object({ message: z.string(), data: ProductSwaggerSchema })
+export class ProductResponseDto extends createZodDto(ProductResponseSchema) {}
+
+export const ProductListResponseSchema = z.object({
+  data: z.array(ProductSwaggerSchema),
+  pagination: PaginationSchema,
+})
+export class ProductListResponseDto extends createZodDto(ProductListResponseSchema) {}
+
+export class ProductDto extends createZodDto(ProductSwaggerSchema) {}

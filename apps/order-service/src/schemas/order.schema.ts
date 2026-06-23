@@ -75,3 +75,26 @@ export const OrderQuerySchema = z.object({
 
 export class OrderQueryDto extends createZodDto(OrderQuerySchema) {}
 export type OrderQueryInput = z.infer<typeof OrderQuerySchema>
+
+// ── Response DTOs (used by controllers for Swagger @ApiResponse type:) ────────
+// z.date() cannot be serialised to JSON Schema (Zod v4), so dates are z.string() here.
+
+import { PaginationSchema } from './pagination.schema'
+
+const datesToString = { createdAt: z.string(), updatedAt: z.string() }
+const OrderSwaggerSchema = OrderSchema.extend(datesToString)
+const ProductSnapshotSwaggerSchema = ProductSnapshotSchema.extend(datesToString)
+const OrderWithProductSwaggerSchema = OrderSwaggerSchema.extend({
+  product: ProductSnapshotSwaggerSchema.nullable(),
+})
+
+export const OrderResponseSchema = z.object({ message: z.string(), data: OrderSwaggerSchema })
+export class OrderResponseDto extends createZodDto(OrderResponseSchema) {}
+
+export const OrderListResponseSchema = z.object({
+  data: z.array(OrderWithProductSwaggerSchema),
+  pagination: PaginationSchema,
+})
+export class OrderListResponseDto extends createZodDto(OrderListResponseSchema) {}
+
+export class OrderWithProductDto extends createZodDto(OrderWithProductSwaggerSchema) {}

@@ -20,6 +20,9 @@ import {
   CreateProductDto,
   UpdateProductDto,
   ProductQueryDto,
+  ProductDto,
+  ProductResponseDto,
+  ProductListResponseDto,
 } from '../schemas/product.schema'
 import type { StockAdjustmentInput } from '../schemas/product.schema'
 
@@ -32,7 +35,7 @@ export class ProductsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a product' })
-  @ApiResponse({ status: 201, description: 'Product created successfully' })
+  @ApiResponse({ status: 201, type: ProductResponseDto })
   @ApiResponse({ status: 400, description: 'Validation error' })
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto)
@@ -42,7 +45,7 @@ export class ProductsController {
   @ApiOperation({
     summary: 'List products with search, filters, sorting and pagination',
   })
-  @ApiResponse({ status: 200, description: 'Paginated product list' })
+  @ApiResponse({ status: 200, type: ProductListResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid query params' })
   findAll(@Query() query: ProductQueryDto) {
     return this.productsService.findAll(query)
@@ -50,7 +53,7 @@ export class ProductsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a product by ID' })
-  @ApiResponse({ status: 200, description: 'Product found' })
+  @ApiResponse({ status: 200, type: ProductDto })
   @ApiResponse({ status: 404, description: 'Product not found' })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id)
@@ -58,7 +61,7 @@ export class ProductsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a product' })
-  @ApiResponse({ status: 200, description: 'Product updated' })
+  @ApiResponse({ status: 200, type: ProductResponseDto })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 404, description: 'Product not found' })
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
@@ -67,7 +70,7 @@ export class ProductsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a product' })
-  @ApiResponse({ status: 200, description: 'Product deleted' })
+  @ApiResponse({ status: 200, type: ProductResponseDto })
   @ApiResponse({ status: 404, description: 'Product not found' })
   remove(@Param('id') id: string) {
     return this.productsService.remove(id)

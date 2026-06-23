@@ -88,6 +88,17 @@ Migrations run automatically on container start. Data persists in Docker named v
 
 ---
 
+## API Docs
+
+Once the services are running, open Swagger in your browser:
+
+| Service | URL |
+|---|---|
+| Product Service | `http://localhost:3001/api/docs` |
+| Order Service | `http://localhost:3002/api/docs` |
+
+---
+
 ## Seeding
 
 | Command | Target | When to run |
