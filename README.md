@@ -1,98 +1,125 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Revest NestJS Microservices
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A two-service NestJS backend for a retail platform. Each service owns its own SQLite database and runs independently. The services communicate internally over TCP — never over HTTP.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ pnpm install
+```
+HTTP Client
+    │
+    ├── GET/POST /products  →  Product Service  :3001  (HTTP)
+    │                                           :3100  (TCP, internal only)
+    │
+    └── GET/POST /orders    →  Order Service    :3002  (HTTP)
+                                    │
+                                    └── TCP { cmd: 'get_product' }  →  Product Service :3100
 ```
 
-## Compile and run the project
+| Service | HTTP | Swagger | DB |
+|---|---|---|---|
+| product-service | `:3001` | `http://localhost:3001/api/docs` | `apps/product-service/src/db/prisma/dev.db` |
+| order-service | `:3002` | `http://localhost:3002/api/docs` | `apps/order-service/src/db/prisma/dev.db` |
 
-```bash
-# development
-$ pnpm run start
+## Prerequisites
 
-# watch mode
-$ pnpm run start:dev
+**Dev:** Node 22, pnpm  
+**Prod:** Docker + Docker Compose (no local Node needed)
 
-# production mode
-$ pnpm run start:prod
+## Environment
+
+Each service has its own `.env` file. These are already in the repo for dev — no setup needed.
+
+**`apps/product-service/.env`**
+```env
+DATABASE_URL="file:./dev.db"
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+**`apps/order-service/.env`**
+```env
+DATABASE_URL="file:./dev.db"
+PRODUCT_SERVICE_HOST=localhost
+PRODUCT_SERVICE_TCP_PORT=3100
 ```
 
-## Deployment
+> **Prod:** environment is injected by `docker-compose.yml` automatically — no `.env` files needed.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Dev
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# 1. Install dependencies
+pnpm install
+
+# 2. Run migrations (first time only)
+pnpm run db:migrate
+
+# 3. Seed products
+pnpm run db:seed
+
+# 4. Start both services in watch mode
+pnpm run dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+`db:seed` is idempotent — safe to run multiple times, skips if data already exists.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Prod (Docker)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# Build images and start both services
+docker compose up --build -d
 
-## Support
+# Seed products (run once, after containers are up)
+pnpm run db:prod:seed
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Tail logs
+docker compose logs -f
 
-## Stay in touch
+# Stop
+docker compose down
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Stop and wipe all data
+docker compose down -v
+```
 
-## License
+Migrations run automatically on container start. Data persists in Docker named volumes (`product_data`, `order_data`).
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+## Seeding
+
+| Command | Target | When to run |
+|---|---|---|
+| `pnpm run db:seed` | Local dev DB | After first `migrate dev` |
+| `pnpm run db:prod:seed` | Docker container DB | Once, after `docker compose up` |
+
+---
+
+## Scripts
+
+| Command | Description |
+|---|---|
+| `pnpm run db:migrate` | Run Prisma migrations for both services |
+| `pnpm run dev` | Both services in watch mode |
+| `pnpm run build` | Compile both services |
+| `pnpm run start:prod` | Run compiled output (no Docker) |
+| `pnpm run lint` | Lint and auto-fix |
+| `pnpm run format` | Prettier format |
+| `pnpm run test` | Run unit tests |
+
+---
+
+## Project Layout
+
+```
+apps/
+  product-service/     # HTTP :3001 + TCP :3100, manages products
+  order-service/       # HTTP :3002, manages orders
+scripts/
+  seed.ts              # Seeds 20 products into product-service DB
+Dockerfile             # Multi-stage build for both services
+docker-compose.yml     # Runs product-service + order-service
+docker-entrypoint.sh   # Runs prisma migrate deploy then starts the service
+```
