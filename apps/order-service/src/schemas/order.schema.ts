@@ -1,22 +1,31 @@
 import { z } from 'zod'
 import { createZodDto } from 'nestjs-zod'
+import { PaginationSchema } from './pagination.schema'
 
 // ── Entity schemas ────────────────────────────────────────────────────────────
 
-// ProductSnapshotSchema mirrors the Product shape from product-service.
-// Defined here rather than imported over the network so order-service has no
-// compile-time dependency on product-service's generated Prisma client.
-export const ProductSnapshotSchema = z.object({
+const ProductSnapshotBaseSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   description: z.string().nullable(),
   price: z.number(),
   stock: z.number().int(),
+})
+
+// ProductSnapshotSchema mirrors the Product shape from product-service.
+// Defined here rather than imported over the network so order-service has no
+// compile-time dependency on product-service's generated Prisma client.
+export const ProductSnapshotSchema = ProductSnapshotBaseSchema.extend({
   createdAt: z.date(),
   updatedAt: z.date(),
 })
 
-export const OrderSchema = z.object({
+const ProductSnapshotSwaggerSchema = ProductSnapshotBaseSchema.extend({
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const OrderBaseSchema = z.object({
   id: z.uuid(),
   productId: z.string(),
   quantity: z.number().int(),
@@ -24,8 +33,16 @@ export const OrderSchema = z.object({
   // the value is stable even if the product price changes later.
   totalPrice: z.number(),
   status: z.string(),
+})
+
+export const OrderSchema = OrderBaseSchema.extend({
   createdAt: z.date(),
   updatedAt: z.date(),
+})
+
+const OrderSwaggerSchema = OrderBaseSchema.extend({
+  createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 // OrderWithProduct is the enriched read shape — the product field is populated
@@ -35,13 +52,15 @@ export const OrderWithProductSchema = OrderSchema.extend({
   product: ProductSnapshotSchema.nullable(),
 })
 
+const OrderWithProductSwaggerSchema = OrderSwaggerSchema.extend({
+  product: ProductSnapshotSwaggerSchema.nullable(),
+})
+
 export type ProductSnapshot = z.infer<typeof ProductSnapshotSchema>
 export type Order = z.infer<typeof OrderSchema>
 export type OrderWithProduct = z.infer<typeof OrderWithProductSchema>
 
 // ── Create / Update ──────────────────────────────────────────────────────────
-// Updates are intentionally limited to status only — quantity and price are
-// fixed at creation to preserve the original order record.
 
 export const CreateOrderSchema = z.object({
   productId: z.uuid(),
@@ -59,9 +78,6 @@ export type CreateOrderInput = z.infer<typeof CreateOrderSchema>
 export type UpdateOrderInput = z.infer<typeof UpdateOrderSchema>
 
 // ── Query (search, filters, sorting, pagination) ─────────────────────────────
-// `search` filters by product name via a TCP call to product-service
-// (search_products pattern) rather than a local DB query, since product names
-// live in a separate database.
 
 export const OrderQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
@@ -76,49 +92,14 @@ export const OrderQuerySchema = z.object({
 export class OrderQueryDto extends createZodDto(OrderQuerySchema) {}
 export type OrderQueryInput = z.infer<typeof OrderQuerySchema>
 
-// ── Response DTOs (used by controllers for Swagger @ApiResponse type:) ────────
-// z.date() cannot be serialised to JSON Schema (Zod v4), so dates are z.string() here.
-
-import { PaginationSchema } from './pagination.schema'
-
-const ProductSnapshotSwaggerSchema = z.object({
-  id: z.uuid(),
-  name: z.string(),
-  description: z.string().nullable(),
-  price: z.number(),
-  stock: z.number().int(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-
-const OrderSwaggerSchema = z.object({
-  id: z.uuid(),
-  productId: z.string(),
-  quantity: z.number().int(),
-  totalPrice: z.number(),
-  status: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-
-const OrderWithProductSwaggerSchema = z.object({
-  id: z.uuid(),
-  productId: z.string(),
-  quantity: z.number().int(),
-  totalPrice: z.number(),
-  status: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  product: ProductSnapshotSwaggerSchema.nullable(),
-})
-
-export const OrderResponseSchema = z.object({ message: z.string(), data: OrderSwaggerSchema })
-export class OrderResponseDto extends createZodDto(OrderResponseSchema) {}
-
-export const OrderListResponseSchema = z.object({
-  data: z.array(OrderWithProductSwaggerSchema),
-  pagination: PaginationSchema,
-})
-export class OrderListResponseDto extends createZodDto(OrderListResponseSchema) {}
+// ── Response DTOs (Swagger only) ─────────────────────────────────────────────
 
 export class OrderWithProductDto extends createZodDto(OrderWithProductSwaggerSchema) {}
+
+export class OrderResponseDto extends createZodDto(
+  z.object({ message: z.string(), data: OrderSwaggerSchema }),
+) {}
+
+export class OrderListResponseDto extends createZodDto(
+  z.object({ data: z.array(OrderWithProductSwaggerSchema), pagination: PaginationSchema }),
+) {}
