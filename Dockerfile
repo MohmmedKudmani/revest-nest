@@ -12,10 +12,11 @@ RUN pnpm install --frozen-lockfile
 # Copy source (node_modules and generated dirs are excluded by .dockerignore)
 COPY . .
 
-# Generate both Prisma clients (bundled by webpack) then build both apps
+# Generate both Prisma clients (bundled by webpack) then build both apps; compile seed script for manual db:prod:seed
 RUN cd apps/product-service/src/db && pnpm exec prisma generate \
  && cd /app/apps/order-service/src/db && pnpm exec prisma generate \
- && cd /app && pnpm run build
+ && cd /app && pnpm run build \
+ && pnpm exec tsc --project tsconfig.seed.json
 
 # Prune dev deps — the runtime image inherits this node_modules
 RUN pnpm prune --prod

@@ -14,7 +14,10 @@
     "lint": "eslint \"{apps}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "db:migrate": "prisma migrate dev --config apps/product-service/src/db/prisma.config.ts && prisma migrate dev --config apps/order-service/src/db/prisma.config.ts",
+    "db:seed": "ts-node --project tsconfig.seed.json --transpile-only scripts/seed.ts",
+    "db:prod:seed": "docker compose exec product-service node dist/scripts/seed.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
